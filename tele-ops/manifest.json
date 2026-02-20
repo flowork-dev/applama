@@ -1,0 +1,25 @@
+{
+    "id": "tele-ops",
+    "name": "TELE OPS - TACTICAL PROMPTER",
+    "ver": "2.0.0",
+    "description": "Professional studio teleprompter. Read scripts while maintaining perfect eye contact with the lens. Features speed control, mirror mode, and font scaling.",
+    "author": "Flowork Cyber Division",
+    "tier": "free",
+    "type": "apps",
+    "entry_point": "logic.js",
+    "icon_file": "icon.svg",
+    "default_width": 10,
+    "default_height": 8,
+    "slug": "tele-ops",
+    "capabilities": [
+        "local_storage",
+        "dom_manipulation",
+        "offline_capable"
+    ],
+    "tags": [
+        "teleprompter",
+        "content-creator",
+        "video-tools",
+        "productivity"
+    ]
+}

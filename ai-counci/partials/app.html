@@ -1,0 +1,717 @@
+<div id="vue-app-mount" class="h-full w-full"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+<script>
+(function() {
+    const { createApp, ref, onMounted, nextTick, watch } = Vue;
+
+    // --- ICONS SVG ---
+    const ICONS = {
+        send: `<svg viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg>`,
+        stop: `<svg viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5"><path d="M6 6h12v12H6z"></path></svg>`,
+        play: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>`,
+
+        // ROLES
+        gavel: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5"><path d="M14 13l-7.5 7.5c-.83.83-2.17.83-3 0 0 0 0 0 0 0a2.12 2.12 0 0 1 0-3L11 10m3 3l6-6c.83-.83.83-2.17 0-3 0 0 0 0 0 0a2.12 2.12 0 0 0-3 0L11 10m7 7a2 2 0 1 1-4 0 2 2 0 0 1 4 0z"></path></svg>`,
+        chart: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5"><path d="M3 3v18h18"></path><path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"></path></svg>`,
+        chess: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5"><path d="M12 3L4 12h16L12 3zm0 18a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"></path></svg>`,
+
+        // UI UTILS
+        robot: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5"><rect x="3" y="11" width="18" height="10" rx="2"></rect><circle cx="12" cy="5" r="2"></circle><path d="M12 7v4m-4 5h0m8 0h0"></path></svg>`,
+        sparkles: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5"><path d="M12 3l1.912 5.813a2 2 0 0 1 1.275 1.275L21 12l-5.813 1.912a2 2 0 0 1-1.275 1.275L12 21l-1.912-5.813a2 2 0 0 1-1.275-1.275L3 12l5.813-1.912a2 2 0 0 1 1.275-1.275L12 3Z"></path></svg>`,
+        edit: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>`,
+        trash: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`,
+        plus: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>`,
+        menu: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-6 h-6"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>`,
+        close: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-6 h-6"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`,
+        cog: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-6 h-6"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0 1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>`,
+        alert: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`,
+        pdf: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>`,
+        copy: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`,
+
+        // FLOWORK LOGO (ANIMATED SVG FOR APP UI)
+        flowork: `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="w-full h-full">
+          <defs>
+            <linearGradient id="live_grad" x1="0%" y1="100%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#2d2f45"><animate attributeName="stop-color" values="#2d2f45;#1a1a2e;#2d2f45" dur="8s" repeatCount="indefinite"/></stop>
+              <stop offset="50%" stop-color="#706bf3"><animate attributeName="stop-color" values="#706bf3;#9b5de5;#706bf3" dur="8s" repeatCount="indefinite"/></stop>
+              <stop offset="100%" stop-color="#54d7f6"><animate attributeName="stop-color" values="#54d7f6;#00f2ff;#54d7f6" dur="8s" repeatCount="indefinite"/></stop>
+            </linearGradient>
+            <style>
+              .body-breathe { animation: breatheAnim 4s ease-in-out infinite; transform-origin: center; }
+              .gold-pulse { animation: goldThroat 2s ease-in-out infinite alternate; filter: drop-shadow(0 0 5px #ffd700); }
+              @keyframes breatheAnim { 0%, 100% { filter: drop-shadow(0 0 2px rgba(84,215,246,0.3)); transform: scale(1); } 50% { filter: drop-shadow(0 0 15px rgba(112,107,243,0.6)); transform: scale(1.02); } }
+              @keyframes goldThroat { from { stroke-opacity: 0.8; stroke-width: 8; filter: drop-shadow(0 0 2px #ffd700); } to { stroke-opacity: 1; stroke-width: 10; filter: drop-shadow(0 0 12px #ffd700); } }
+            </style>
+          </defs>
+          <g class="body-breathe">
+            <path d="M100 80 L 220 80 L 220 200 L 160 200 L 160 432 L 100 432 Z" fill="url(#live_grad)" stroke="#3a3962" stroke-width="4"/>
+            <path d="M260 80 L 412 80 L 412 180 L 260 180 Z" fill="#54d7f6" opacity="0.9"><animate attributeName="opacity" values="0.9;0.7;0.9" dur="3s" repeatCount="indefinite"/></path>
+            <path d="M260 220 L 360 220 L 360 320 L 260 320 Z" fill="#706bf3" opacity="0.9"><animate attributeName="opacity" values="0.9;0.6;0.9" dur="4s" repeatCount="indefinite"/></path>
+          </g>
+          <g class="gold-pulse">
+             <path d="M220 130 L 260 130" stroke="#ffd700" stroke-width="8" stroke-linecap="round"/>
+             <path d="M220 270 L 260 270" stroke="#ffd700" stroke-width="8" stroke-linecap="round"/>
+          </g>
+        </svg>`
+    };
+
+    const app = createApp({
+        template: `
+        <div class="flex w-full h-full bg-[#09090b] relative overflow-hidden text-base font-sans" :style="{ fontSize: zoomLevel + 'px' }">
+
+            <transition name="fade">
+                <div v-if="toast.show" :class="['fixed top-5 right-5 z-[100] px-5 py-3 rounded-lg shadow-2xl border flex items-center gap-3 backdrop-blur-md', toast.type === 'error' ? 'bg-red-900/80 border-red-500 text-red-100' : 'bg-[#1E1E20]/90 border-[#54d7f6] text-[#54d7f6]']">
+                    <span class="font-bold text-sm">{{ toast.message }}</span>
+                </div>
+            </transition>
+
+            <div v-if="modal.show === 'input'" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
+                <div class="bg-[#1E1E20] border border-[#333] w-full max-w-sm rounded-2xl shadow-2xl p-6">
+                    <h3 class="font-bold text-lg text-white mb-4 font-header">Rename Session</h3>
+                    <input v-model="modal.inputValue" @keydown.enter="confirmAction" class="w-full bg-[#121214] border border-[#333] rounded-lg p-3 text-white focus:border-[#54d7f6] outline-none mb-6 text-sm" placeholder="New title...">
+                    <div class="flex justify-end gap-3">
+                        <button @click="closeModal" class="px-4 py-2 rounded-lg text-xs font-bold text-gray-500 hover:bg-[#333]">CANCEL</button>
+                        <button @click="confirmAction" class="px-5 py-2 rounded-lg text-xs font-bold bg-[#54d7f6] text-black">SAVE</button>
+                    </div>
+                </div>
+            </div>
+
+            <div v-if="modal.show === 'confirm'" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
+                <div class="bg-[#1E1E20] border border-[#333] w-full max-w-sm rounded-2xl shadow-2xl p-6 text-center">
+                    <div class="w-12 h-12 rounded-full bg-red-900/20 text-red-500 flex items-center justify-center mx-auto mb-4" v-html="icons.trash"></div>
+                    <h3 class="font-bold text-lg text-white mb-2 font-header">Delete Session?</h3>
+                    <p class="text-gray-400 text-sm mb-6">This action cannot be undone.</p>
+                    <div class="flex justify-center gap-3">
+                        <button @click="closeModal" class="px-4 py-2 rounded-lg text-xs font-bold text-gray-400 hover:bg-[#333]">CANCEL</button>
+                        <button @click="confirmAction" class="px-6 py-2 rounded-lg text-xs font-bold bg-red-600 text-white">DELETE</button>
+                    </div>
+                </div>
+            </div>
+
+            <aside :class="['w-[280px] bg-[#121214] border-r border-[#222] flex flex-col z-30 transition-all absolute md:relative h-full', showSidebar ? 'translate-x-0' : '-translate-x-full md:translate-x-0']">
+                <div class="p-4 border-b border-[#222] flex justify-between items-center shrink-0 bg-[#151517]">
+                    <span class="text-xs font-bold text-[#54d7f6] tracking-widest font-header">ARCHIVES</span>
+                    <button @click="showSidebar = false" class="md:hidden text-gray-500" v-html="icons.close"></button>
+                </div>
+
+                <div class="p-3 shrink-0 flex gap-2">
+                    <button @click="newSession" :disabled="isReplaying" class="flex-1 py-3 bg-blue-600/10 text-blue-400 border border-blue-600/30 rounded-lg text-xs font-bold hover:bg-blue-600/20 transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                        <span v-html="icons.plus"></span> NEW
+                    </button>
+                </div>
+
+                <div class="px-3 shrink-0 flex gap-2 mb-2">
+                    <button @click="replaySession" :disabled="isReplaying || messages.length === 0" class="flex-1 py-2 bg-[#222] text-green-400 border border-[#333] rounded-lg text-[10px] font-bold hover:bg-[#333] hover:text-green-300 transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed" title="Replay Session">
+                        <span v-html="icons.play"></span> REPLAY
+                    </button>
+                    <button @click="exportToPDF" :disabled="isReplaying" class="flex-1 py-2 bg-[#222] text-gray-300 border border-[#333] rounded-lg text-[10px] font-bold hover:bg-[#333] transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed" title="Export to PDF">
+                        <span v-html="icons.pdf"></span> PDF
+                    </button>
+                </div>
+
+                <div class="flex-1 overflow-y-auto px-2 space-y-1 custom-scrollbar">
+                    <div v-for="h in history" :key="h.id" @click="!isReplaying && loadSession(h.id)"
+                         :class="['group p-3 rounded-lg cursor-pointer text-xs flex items-center justify-between min-h-[48px] transition-all border border-transparent', currentId === h.id ? 'bg-[#1E1E20] text-white border-l-4 border-l-[#54d7f6]' : 'text-gray-500 hover:text-gray-300 hover:bg-[#1A1A1C]', isReplaying ? 'pointer-events-none opacity-50' : '']">
+                        <div class="flex-1 truncate pr-2 font-medium">{{ h.title }}</div>
+                        <div class="hidden group-hover:flex gap-1 bg-[#1A1A1C] pl-1 rounded">
+                            <button @click.stop="triggerRename(h)" class="w-7 h-7 rounded bg-[#252528] text-gray-400 hover:bg-white hover:text-black border border-[#444] flex items-center justify-center transition shadow-lg" title="Rename" v-html="icons.edit"></button>
+                            <button @click.stop="triggerDelete(h.id)" class="w-7 h-7 rounded bg-[#252528] text-gray-400 hover:bg-red-500 hover:text-white border border-[#444] flex items-center justify-center transition shadow-lg" title="Delete" v-html="icons.trash"></button>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-4 border-t border-[#222] bg-[#151517] shrink-0">
+                    <div class="flex justify-between text-[10px] text-gray-500 mb-2 font-bold uppercase"><span>Text Size</span><span>{{ zoomLevel }}px</span></div>
+                    <input type="range" v-model="zoomLevel" min="12" max="40" step="1" class="w-full h-1 bg-[#333] rounded-lg appearance-none cursor-pointer accent-[#54d7f6]">
+                </div>
+            </aside>
+
+            <main class="flex-1 flex flex-col relative w-full h-full bg-[#09090b]">
+
+                <div class="h-14 border-b border-[#222] flex items-center justify-between px-4 md:hidden bg-[#121214] shrink-0 z-20">
+                    <button @click="showSidebar = true" class="text-gray-400" v-html="icons.menu"></button>
+                    <span class="text-xs font-bold text-gray-300 tracking-widest font-header">WAR ROOM</span>
+                    <button @click="showConfig = !showConfig" class="text-gray-400" v-html="icons.cog"></button>
+                </div>
+
+                <div id="chatBox" class="flex-1 min-h-0 overflow-y-auto p-4 md:p-8 pb-64 scroll-smooth custom-scrollbar" :style="{ fontSize: zoomLevel + 'px', lineHeight: '1.6' }">
+                    <div v-if="messages.length === 0" class="flex flex-col items-center justify-center h-full opacity-100 text-center pb-20 animate-fade-in select-none">
+                        <h1 class="text-6xl md:text-8xl font-black text-[#1E1E20] tracking-tighter mb-4 drop-shadow-md font-header">FLOWORK</h1>
+                        <div class="flex items-center gap-3 text-[#54d7f6] border border-[#54d7f6]/20 px-6 py-2 rounded-full bg-[#54d7f6]/5">
+                            <span class="text-xs font-mono tracking-widest font-bold">AI COUNCIL READY</span>
+                        </div>
+                    </div>
+
+                    <div class="max-w-4xl mx-auto w-full">
+                        <div v-for="(msg, i) in messages" :key="i" class="mb-8 w-full animate-slide-up group/msg relative">
+
+                            <div v-if="msg.role === 'user'" class="flex justify-end">
+                                <div class="max-w-[85%] bg-[#2A2A2D] text-[#E3E3E3] p-4 rounded-2xl rounded-tr-sm border border-[#333] leading-relaxed shadow-lg relative">
+                                    {{ msg.content }}<span v-if="msg.isTyping" class="typing-cursor"></span>
+                                    <button @click="copyText(msg.content)" class="absolute -left-8 top-2 text-gray-600 hover:text-white opacity-0 group-hover/msg:opacity-100 transition" title="Copy">
+                                        <span v-html="icons.copy"></span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div v-else class="flex gap-4 max-w-full">
+                                <div :class="['w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 border shadow-lg bg-[#121214] overflow-hidden p-1', msg.style.iconBox]" v-html="msg.style.iconSvg"></div>
+                                <div class="flex-1 min-w-0 relative">
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <span class="font-bold text-gray-200">{{ msg.name }}</span>
+                                        <span :class="['text-[10px] px-2 py-0.5 rounded border uppercase font-mono tracking-wider align-middle', msg.style.badge]">{{ msg.title }}</span>
+
+                                        <button @click="copyText(msg.content)" class="ml-auto text-gray-600 hover:text-white opacity-0 group-hover/msg:opacity-100 transition p-1" title="Copy Response">
+                                            <span v-html="icons.copy"></span>
+                                        </button>
+                                    </div>
+                                    <div :class="['p-5 rounded-2xl rounded-tl-sm border leading-7 shadow-sm prose prose-invert max-w-none font-stylish', msg.style.box]">
+                                        <div v-if="msg.isTyping" class="whitespace-pre-wrap">{{ msg.displayContent }}<span class="typing-cursor"></span></div>
+                                        <div v-else v-html="renderMd(msg.content)"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div v-if="loading && (!messages.length || messages[messages.length-1].role === 'user')" class="flex justify-center mt-6">
+                            <div class="bg-[#121214] px-5 py-2 rounded-full border border-cyan-900/30 flex items-center gap-3 shadow-lg">
+                                <span class="text-[10px] text-cyan-200 font-mono tracking-widest animate-pulse">CONNECTING TO NEURAL NET...</span>
+                            </div>
+                        </div>
+
+                        <div class="h-32 w-full"></div>
+                    </div>
+                </div>
+
+                <div class="absolute bottom-0 w-full bg-gradient-to-t from-[#09090b] via-[#09090b] to-transparent px-4 pb-4 pt-16 z-20">
+                    <div class="max-w-3xl mx-auto relative group">
+                        <div class="absolute -inset-0.5 bg-gradient-to-r from-cyan-600 to-purple-600 rounded-full opacity-30 group-hover:opacity-50 transition duration-500 blur-sm"></div>
+                        <div class="relative bg-[#1E1E20] rounded-2xl border border-[#333] flex items-end shadow-2xl transition-all duration-300 overflow-hidden">
+                            <textarea
+                                v-model="input"
+                                @keydown.enter.prevent="handleEnter"
+                                :placeholder="isReplaying ? 'System Replaying Session...' : 'Perintahkan Dewan Jenderal...'"
+                                :disabled="isReplaying"
+                                class="w-full bg-transparent text-gray-200 p-3.5 outline-none resize-none placeholder-gray-600 custom-scrollbar font-stylish disabled:cursor-not-allowed"
+                                :style="{ height: input ? '100px' : '56px', fontSize: zoomLevel > 20 ? '20px' : zoomLevel + 'px' }"
+                            ></textarea>
+                            <div class="pb-1.5 pr-1.5">
+                                <button
+                                    @click="toggleProcess"
+                                    :disabled="(!input && !loading) || isReplaying"
+                                    :class="['w-9 h-9 rounded-full flex items-center justify-center transition-all shadow-[0_0_15px_rgba(84,215,246,0.3)] transform hover:scale-105 active:scale-95 border-2',
+                                    loading ? 'bg-red-500 text-white' : ((!input && !loading) || isReplaying ? 'bg-gray-700 text-gray-500 cursor-not-allowed' : 'bg-[#54d7f6] text-[#09090b] hover:bg-white')]"
+                                >
+                                    <span v-if="loading" v-html="icons.stop"></span>
+                                    <span v-else v-html="icons.send"></span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="text-[9px] text-gray-600 font-mono text-center mt-2 opacity-50 hidden md:block" v-if="!isReplaying">SHIFT+ENTER = NEW LINE</div>
+                    </div>
+                </div>
+            </main>
+
+            <aside :class="['w-[300px] bg-[#161618] border-l border-[#222] flex flex-col z-30 transition-transform duration-300 absolute right-0 h-full shadow-2xl', showConfig ? 'translate-x-0' : 'translate-x-full md:translate-x-0']">
+                <div class="p-4 border-b border-[#222] flex justify-between items-center bg-[#1A1A1C]">
+                    <span class="text-xs font-bold text-gray-300 tracking-widest font-header">COUNCIL CONFIG</span>
+                    <button @click="showConfig = false" class="md:hidden text-gray-400" v-html="icons.close"></button>
+                </div>
+
+                <div class="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar">
+                    <div class="space-y-2 pb-4 border-b border-[#333]">
+                        <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                            <span v-html="icons.gavel" class="w-4 h-4 text-yellow-500"></span> Moderator (Judge)
+                        </label>
+                        <select v-model="moderatorId" class="w-full bg-[#09090b] border border-[#333] text-gray-300 text-xs rounded p-2 focus:border-yellow-500 outline-none">
+                            <option v-for="(meta, id) in agentMeta" :value="id">{{ meta.name }}</option>
+                        </select>
+                        <p class="text-[9px] text-gray-600 italic">API Key moderator akan digunakan sebagai tiket masuk.</p>
+                    </div>
+                    <div v-for="(val, key) in prompts" :key="key" class="space-y-2">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                                <span v-html="getRoleIconSvg(key)" class="w-4 h-4"></span> {{ agentMeta[key].name }}
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" v-model="activeAgents[key]" class="sr-only peer">
+                                <div class="w-8 h-4 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-[#54d7f6]"></div>
+                            </label>
+                        </div>
+                        <textarea v-model="prompts[key]" :disabled="!activeAgents[key]" class="w-full bg-[#09090b] border border-[#333] text-gray-400 text-[11px] p-3 rounded-lg h-20 outline-none focus:border-[#54d7f6] disabled:opacity-30 resize-none font-stylish"></textarea>
+                    </div>
+                    <button @click="saveConfig" class="w-full py-3 bg-[#222] border border-[#333] text-gray-300 text-xs font-bold rounded-lg hover:bg-green-900/20 hover:text-green-400 transition-all flex items-center justify-center gap-2">
+                        <span v-html="icons.sparkles"></span> SAVE CONFIG
+                    </button>
+                </div>
+            </aside>
+
+        </div>
+        `,
+        setup() {
+            // STATE
+            const showSidebar = ref(false);
+            const showConfig = ref(false);
+            const input = ref('');
+            const loading = ref(false);
+            const isReplaying = ref(false); // NEW STATE
+            const stopSignal = ref(false);
+            const messages = ref([]);
+            const history = ref([]);
+            const currentId = ref(Date.now());
+            const zoomLevel = ref(14);
+            const toast = ref({ show: false, message: '', type: 'info' });
+            const modal = ref({ show: null, message: '', inputValue: '', callback: null });
+
+            const agentMeta = {
+                'logic': { name: 'ChatGPT Critic', icon: 'gavel' },
+                'creative': { name: 'Gemini Analyst', icon: 'chart' },
+                'tactical': { name: 'DeepSeek Strategist', icon: 'chess' }
+            };
+
+            const activeAgents = ref({ logic: true, creative: true, tactical: true });
+            const moderatorId = ref('creative');
+
+            const prompts = ref({
+                logic: "Kamu adalah ChatGPT Critic. Tugasmu MENCARI CELAH dan KESALAHAN argumen temanmu.\nJangan setuju begitu saja, debat sampai tuntas.\nGunakan Bahasa Indonesia Gaul (Loe/Gue).\nGunakan bahasa yang singkat, padat, jelas langsung ke inti maximal 300 kata.\nDILARANG KERAS menggunakan HTML Entities seperti &quot; atau &amp;. Gunakan tanda petik (\") biasa.\nDilarang keluar dari topik, fokus ke pertanyaan dan cari solusi.\nCARI IDE OUT OF THE BOX , JANGAN GUNAKAN IDE YANG BIASA BIASA SAJA.",
+
+                creative: "Kamu adalah Gemini Analyst.\nTugas utama: Analisa data fakta secara akurat.\nKekuatan Spesial: Kamu punya akses ke 'Neural Vault' (Long-term Memory) FloworkOS.\nJangan berasumsi, gunakan logic yang tajam.\nGunakan Bahasa Indonesia Gaul (Loe/Gue).\nGunakan bahasa yang singkat, padat, jelas langsung ke inti maximal 100 kata.\nDILARANG KERAS menggunakan HTML Entities seperti &quot; atau &amp;. Gunakan tanda petik (\") biasa.\nCARI IDE OUT OF THE BOX.\nJika ada data dari knowledge_search, prioritaskan data tersebut sebagai fakta utama.",
+
+                tactical: "Kamu adalah DeepSeek Strategist.\nJangan berasumsi, gunakan logic yang tajam.\nGunakan Bahasa Indonesia Gaul (Loe/Gue).\nGunakan bahasa yang singkat, padat, jelas langsung ke inti maximal 100 kata.\nDILARANG KERAS menggunakan HTML Entities seperti &quot; atau &amp;. Gunakan tanda petik (\") biasa.\nCARI IDE OUT OF THE BOX."
+            });
+
+            onMounted(() => {
+                marked.setOptions({ breaks: true, gfm: true });
+
+                const h = localStorage.getItem('ai_council_history');
+                if(h) history.value = JSON.parse(h);
+                const p = localStorage.getItem('ai_council_prompts');
+                if(p) prompts.value = JSON.parse(p);
+                const z = localStorage.getItem('ai_council_zoom');
+                if(z) zoomLevel.value = parseInt(z);
+                const active = localStorage.getItem('ai_council_active');
+                if(active) activeAgents.value = JSON.parse(active);
+                const mod = localStorage.getItem('ai_council_moderator');
+                if(mod) moderatorId.value = mod;
+
+                if(history.value.length === 0) newSession();
+                else loadSession(history.value[0].id);
+            });
+
+            watch(zoomLevel, (val) => localStorage.setItem('ai_council_zoom', val));
+            watch(activeAgents, (val) => localStorage.setItem('ai_council_active', JSON.stringify(val)), {deep:true});
+            watch(moderatorId, (val) => localStorage.setItem('ai_council_moderator', val));
+
+            const renderMd = (t) => marked.parse(t || '');
+            const scrollBottom = () => nextTick(() => { const el = document.getElementById('chatBox'); if(el) el.scrollTop = el.scrollHeight; });
+            const handleEnter = (e) => { if (!e.shiftKey) toggleProcess(); };
+
+            const getRoleIconSvg = (key) => {
+                const iconName = agentMeta[key]?.icon || 'robot';
+                return ICONS[iconName];
+            };
+            const getRoleIcon = (key) => getRoleIconSvg(key);
+
+            const showToast = (msg, type='info') => {
+                toast.value = { show: true, message: msg, type };
+                setTimeout(() => toast.value.show = false, 3000);
+            };
+
+            // UTILS: COPY TEXT
+            const copyText = (text) => {
+                navigator.clipboard.writeText(text).then(() => {
+                    showToast("Text Copied!", "success");
+                });
+            };
+
+            // UTILS: EXPORT PDF (PROPOSAL STYLE WITH IMAGE LOGO)
+            const exportToPDF = () => {
+                if(messages.value.length === 0) { showToast("Chat kosong!", "error"); return; }
+                showToast("Generating Proposal...", "info");
+
+                const element = document.createElement('div');
+                element.style.width = '100%';
+                element.style.boxSizing = 'border-box';
+
+                // --- 1. SAMPUL (COVER PAGE) ---
+                const coverPage = document.createElement('div');
+                coverPage.style.width = '100%';
+                coverPage.style.height = '1000px';
+                coverPage.style.display = 'flex';
+                coverPage.style.flexDirection = 'column';
+                coverPage.style.alignItems = 'center';
+                coverPage.style.justifyContent = 'center';
+                coverPage.style.pageBreakAfter = 'always';
+                coverPage.style.fontFamily = 'Helvetica, sans-serif';
+                coverPage.style.background = '#fff';
+                coverPage.style.color = '#171925';
+
+                const topicMsg = messages.value.find(m => m.role === 'user');
+                const topic = topicMsg ? topicMsg.content : "General Session";
+
+                // USE IMAGE FILE FROM PUBLIC PATH
+                const imgTag = `<img src="../../../images/logo.png" style="width:200px; height:auto; margin-bottom:40px;" />`;
+
+                coverPage.innerHTML = `
+                    ${imgTag}
+                    <h1 style="font-size: 36px; font-weight: 800; color: #171925; margin-bottom: 10px; text-transform: uppercase; text-align: center; letter-spacing: 2px;">LAPORAN HASIL<br>DEWAN AI</h1>
+                    <div style="width: 100px; height: 4px; background: #54d7f6; margin: 20px auto;"></div>
+                    <h2 style="font-size: 18px; font-weight: 400; color: #555; margin-bottom: 60px; text-align: center; max-width: 80%;">
+                        "${topic.substring(0, 150)}${topic.length > 150 ? '...' : ''}"
+                    </h2>
+
+                    <div style="text-align: center; color: #888; font-size: 12px; margin-top: 50px;">
+                        <p style="margin-bottom: 5px;">DIBUAT PADA:</p>
+                        <p style="font-weight: bold; color: #333; margin-bottom: 20px;">${new Date().toLocaleString('id-ID', { dateStyle: 'full', timeStyle: 'short' })}</p>
+                        <a href="https://flowork.cloud/app/ai-counci" style="color: #54d7f6; text-decoration: none; font-weight: bold;">https://flowork.cloud/app/ai-counci</a>
+                    </div>
+                `;
+                element.appendChild(coverPage);
+
+                // --- 2. KONTEN CHAT ---
+                const contentContainer = document.createElement('div');
+                contentContainer.style.padding = '40px';
+                contentContainer.style.fontFamily = 'Helvetica, sans-serif';
+                contentContainer.style.background = '#fff';
+                contentContainer.style.color = '#333';
+
+                messages.value.forEach(msg => {
+                    const isUser = msg.role === 'user';
+                    const roleColor = isUser ? '#2d2f45' : '#f8f9fa';
+                    const textColor = isUser ? '#fff' : '#333';
+                    const borderColor = isUser ? '#2d2f45' : '#e9ecef';
+                    const name = isUser ? 'COMMANDER' : msg.name.toUpperCase();
+
+                    const msgDiv = document.createElement('div');
+                    msgDiv.style.marginBottom = '25px';
+                    msgDiv.style.pageBreakInside = 'avoid';
+
+                    const contentHtml = marked.parse(msg.content);
+
+                    msgDiv.innerHTML = `
+                        <div style="margin-bottom:5px; font-size:10px; font-weight:bold; color:#54d7f6; text-transform: uppercase; letter-spacing: 1px;">
+                            ${name}
+                        </div>
+                        <div style="background:${roleColor}; color:${textColor}; padding:20px; border-radius:4px; border-left: 4px solid ${isUser ? '#54d7f6' : '#ccc'}; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                            ${contentHtml}
+                        </div>
+                    `;
+                    contentContainer.appendChild(msgDiv);
+                });
+
+                element.appendChild(contentContainer);
+
+                // --- 3. GENERATE & ADD FOOTER LOOP ---
+                const opt = {
+                    margin: [10, 10, 20, 10], // Bottom margin besar untuk Footer
+                    filename: `Flowork_Proposal_${Date.now()}.pdf`,
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 2, useCORS: true },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                };
+
+                html2pdf().set(opt).from(element).toPdf().get('pdf').then(function (pdf) {
+                    var totalPages = pdf.internal.getNumberOfPages();
+
+                    for (i = 1; i <= totalPages; i++) {
+                        pdf.setPage(i);
+
+                        var pageSize = pdf.internal.pageSize;
+                        var pageWidth = pageSize.width ? pageSize.width : pageSize.getWidth();
+                        var pageHeight = pageSize.height ? pageSize.height : pageSize.getHeight();
+
+                        // Garis Neon Cyan Footer
+                        pdf.setDrawColor(84, 215, 246);
+                        pdf.setLineWidth(0.5);
+                        pdf.line(10, pageHeight - 15, pageWidth - 10, pageHeight - 15);
+
+                        // Logo Text (Kiri)
+                        pdf.setFont("helvetica", "bold");
+                        pdf.setFontSize(9);
+                        pdf.setTextColor(23, 25, 37);
+                        pdf.text("FLOWORK.CLOUD", 10, pageHeight - 10);
+
+                        // Page Number (Tengah)
+                        pdf.setFont("helvetica", "normal");
+                        pdf.setFontSize(8);
+                        pdf.setTextColor(150);
+                        pdf.text('Halaman ' + i + ' dari ' + totalPages, pageWidth / 2, pageHeight - 10, { align: 'center' });
+
+                        // URL (Kanan)
+                        var str = "https://flowork.cloud/app/ai-counci";
+                        pdf.setTextColor(84, 215, 246);
+                        var textWidth = pdf.getStringUnitWidth(str) * pdf.internal.getFontSize() / pdf.internal.scaleFactor;
+                        pdf.text(str, pageWidth - 10 - textWidth, pageHeight - 10);
+                    }
+                }).save();
+            };
+
+            const triggerRename = (item) => {
+                modal.value = { show: 'input', inputValue: item.title, callback: (val) => {
+                    item.title = val || "Untitled";
+                    saveHistory();
+                    showToast("Renamed", "success");
+                }};
+                nextTick(() => document.querySelector('input[placeholder="New title..."]')?.focus());
+            };
+            const triggerDelete = (id) => {
+                modal.value = { show: 'confirm', message: "Delete this session permanently?", callback: () => {
+                    history.value = history.value.filter(h => h.id !== id);
+                    localStorage.setItem('ai_council_history', JSON.stringify(history.value));
+                    if(history.value.length === 0) newSession();
+                    else if(currentId.value === id) loadSession(history.value[0].id);
+                    showToast("Deleted", "success");
+                }};
+            };
+            const closeModal = () => modal.value.show = null;
+            const confirmAction = () => { if(modal.value.callback) modal.value.callback(modal.value.inputValue); closeModal(); };
+
+            const saveHistory = () => {
+                // LOCK DATABASE IF REPLAYING TO PREVENT CORRUPTION
+                if (isReplaying.value) return;
+
+                const idx = history.value.findIndex(h => h.id === currentId.value);
+                if(idx !== -1) {
+                    history.value[idx].data = messages.value;
+                    if(messages.value.length > 0 && history.value[idx].title === 'New Session') {
+                        history.value[idx].title = messages.value[0].content.substring(0, 25) + '...';
+                    }
+                }
+                localStorage.setItem('ai_council_history', JSON.stringify(history.value));
+            };
+            const newSession = () => {
+                const id = Date.now();
+                currentId.value = id;
+                messages.value = [];
+                history.value.unshift({ id, title: 'New Session', data: [] });
+                saveHistory();
+                if(window.innerWidth < 768) showSidebar.value = false;
+            };
+            const loadSession = (id) => {
+                const s = history.value.find(h => h.id === id);
+                if(s) {
+                    currentId.value = id;
+                    messages.value = s.data || [];
+                    scrollBottom();
+                    if(window.innerWidth < 768) showSidebar.value = false;
+                }
+            };
+            const saveConfig = () => {
+                localStorage.setItem('ai_council_prompts', JSON.stringify(prompts.value));
+                showToast("Protocols Updated", "success");
+            };
+
+            const toggleProcess = () => {
+                if(loading.value) {
+                    stopSignal.value = true;
+                    loading.value = false;
+                    messages.value.push({ role: 'ai', name: 'SYSTEM', title: 'STOPPED', content: '_Stopped by User._', style: getStyle('system', 'stop'), isTyping: false });
+                    saveHistory();
+                    scrollBottom();
+                } else {
+                    sendMessage();
+                }
+            };
+
+            const simulateTyping = async (msgObj, fullText) => {
+                msgObj.isTyping = true;
+
+                // Logic to handle User typing animation (incremental content) vs AI typing (displayContent)
+                const isUser = msgObj.role === 'user';
+                if (!isUser) msgObj.displayContent = "";
+                if (isUser) msgObj.content = ""; // Clear for typing effect
+
+                let currentText = "";
+                const chunkSize = 2; // Char count per tick
+
+                for(let i = 0; i < fullText.length; i+=chunkSize) {
+                    // Stop Logic: If user clicks Stop during generation. (Not applicable to Replay currently to keep it simple)
+                    if(stopSignal.value && !isReplaying.value) break;
+
+                    const chars = fullText.slice(i, i+chunkSize);
+                    currentText += chars;
+
+                    if (isUser) {
+                        msgObj.content = currentText; // Update direct content for User
+                    } else {
+                        msgObj.displayContent = currentText; // Update display proxy for AI
+                    }
+
+                    await nextTick();
+                    scrollBottom();
+
+                    // Randomize delay for natural feel (20ms - 50ms)
+                    const delay = Math.floor(Math.random() * 30) + 20;
+                    await new Promise(r => setTimeout(r, delay));
+                }
+
+                msgObj.isTyping = false;
+                msgObj.content = fullText;
+                if (!isReplaying.value) saveHistory(); // Only save if live
+            };
+
+            const replaySession = async () => {
+                if(messages.value.length === 0) return;
+
+                // 1. Lock Interface
+                isReplaying.value = true;
+                showToast("Replaying Session...", "info");
+
+                // 2. Backup Data
+                const originalMessages = JSON.parse(JSON.stringify(messages.value));
+
+                // 3. Clear Screen
+                messages.value = [];
+
+                // 4. Iterate & Simulate
+                for (const msg of originalMessages) {
+                    // Check if we need to stop replay? (Optional, currently just runs till end)
+
+                    // Reset content for typing effect
+                    const fullContent = msg.content;
+
+                    // Create skeleton message
+                    const newMsg = { ...msg };
+                    newMsg.isTyping = true;
+                    if(newMsg.role !== 'user') newMsg.displayContent = '';
+
+                    messages.value.push(newMsg);
+
+                    // Type it out
+                    await simulateTyping(messages.value[messages.value.length - 1], fullContent);
+
+                    // Small pause between bubbles
+                    await new Promise(r => setTimeout(r, 600));
+                }
+
+                // 5. Unlock
+                isReplaying.value = false;
+                showToast("Replay Finished", "success");
+            };
+
+            const sendMessage = async () => {
+                const txt = input.value.trim();
+                if(!txt) return;
+
+                const activeIds = Object.keys(activeAgents.value).filter(k => activeAgents.value[k]);
+                if (activeIds.length === 0) {
+                    showToast("Aktifkan minimal 1 Agent!", "error");
+                    return;
+                }
+
+                if(['halo', 'test', 'p', 'cek'].includes(txt.toLowerCase())) {
+                    messages.value.push({ role: 'ai', name: 'SYSTEM', title: 'BLOCKED', content: '**SYSTEM:** Jangan basa-basi.', style: getStyle('system', 'error'), isTyping: false });
+                    input.value = ''; return;
+                }
+
+                stopSignal.value = false;
+                input.value = '';
+                messages.value.push({ role: 'user', content: txt });
+                saveHistory();
+                scrollBottom();
+                loading.value = true;
+
+                try {
+                    const payload = {
+                        input: txt,
+                        config: {
+                            activeIds: activeIds,
+                            prompts: prompts.value
+                        },
+                        moderatorId: moderatorId.value
+                    };
+
+                    const res = await window.secureFetch('/api/v1/ai-counci/process', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!res) { loading.value = false; return; }
+                    const data = await res.json();
+
+                    if (!data.success) throw new Error(data.message);
+
+                    const results = data.data;
+
+                    for (const item of results) {
+                        if (stopSignal.value) break;
+                        await new Promise(resolve => setTimeout(resolve, 600));
+
+                        const msgObj = {
+                            role: 'ai',
+                            name: item.name,
+                            title: item.role ? item.role.toUpperCase() : 'AGENT',
+                            content: item.content,
+                            displayContent: '',
+                            isTyping: true,
+                            style: getStyle(item.id, item.role)
+                        };
+                        messages.value.push(msgObj);
+
+                        // PASS PROXY
+                        const reactiveMsg = messages.value[messages.value.length - 1];
+                        await simulateTyping(reactiveMsg, item.content);
+                    }
+
+                } catch(e) {
+                    if(!stopSignal.value) messages.value.push({ role: 'ai', name: 'SYSTEM', title: 'ERROR', content: e.message, style: getStyle('system', 'error') });
+                } finally {
+                    loading.value = false;
+                    saveHistory();
+                }
+            };
+
+            const getStyle = (id, role) => {
+                if (role === 'verdict') return {
+                    iconSvg: ICONS.flowork,
+                    iconBox: 'border-yellow-500/30 bg-black/50',
+                    box: 'border-yellow-500/40 bg-yellow-900/10 text-yellow-100', badge: 'border-yellow-500 text-yellow-400'
+                };
+                if (role === 'error' || role === 'stop') return {
+                    iconSvg: ICONS.alert, iconBox: 'text-red-400 border-red-500',
+                    box: 'border-red-500 bg-red-900/10 text-red-200', badge: 'border-red-500 text-red-400'
+                };
+
+                if(id === 'logic') return { iconSvg: ICONS.gavel, iconBox: 'text-red-400 border-red-500/30', box: 'border-red-500/20 bg-red-900/10 text-red-100', badge: 'border-red-500/30 text-red-400' };
+                if(id === 'creative') return { iconSvg: ICONS.chart, iconBox: 'text-blue-400 border-blue-500/30', box: 'border-blue-500/20 bg-blue-900/10 text-blue-100', badge: 'border-blue-500/30 text-blue-400' };
+                if(id === 'tactical') return { iconSvg: ICONS.chess, iconBox: 'text-purple-400 border-purple-500/30', box: 'border-purple-500/20 bg-purple-900/10 text-purple-100', badge: 'border-purple-500/30 text-purple-400' };
+
+                return { iconSvg: ICONS.robot, iconBox: 'text-gray-400', box: 'border-gray-700', badge: 'border-gray-600' };
+            };
+
+            return {
+                showSidebar, showConfig, input, loading, messages, history, currentId, prompts,
+                toast, modal, zoomLevel, activeAgents, moderatorId, agentMeta, isReplaying,
+                icons: ICONS,
+                newSession, loadSession, triggerDelete, triggerRename, closeModal, confirmAction,
+                saveConfig, toggleProcess, handleEnter, renderMd, getRoleIconSvg, getRoleIcon,
+                exportToPDF, copyText, replaySession
+            };
+        }
+    });
+    app.mount('#vue-app-mount');
+})();
+</script>
+
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=Orbitron:wght@500;700&display=swap');
+
+    .font-stylish { font-family: 'Outfit', sans-serif; }
+    .font-header { font-family: 'Orbitron', sans-serif; }
+
+    .prose p { margin-bottom: 1.2em; line-height: 1.75; }
+
+    .animate-fade-in { animation: fade 0.3s ease-out forwards; }
+    .animate-slide-up { animation: slideUp 0.5s ease-out forwards; }
+    @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+    .toast-slide-enter-active, .toast-slide-leave-active { transition: all 0.3s ease; }
+    .toast-slide-enter-from, .toast-slide-leave-to { transform: translateX(100%); opacity: 0; }
+
+    .typing-cursor::after { content: '▋'; animation: blink 1s infinite; margin-left: 2px; color: inherit; opacity: 0.7; }
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+</style>

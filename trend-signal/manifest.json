@@ -1,0 +1,26 @@
+{
+    "id": "trend-signal",
+    "name": "TREND SIGNAL - VIRAL VELOCITY RADAR",
+    "ver": "2.0.0",
+    "description": "Real-time viral trend analysis. Detect market saturation and content velocity before the competition. AI-powered strategy generator for creators.",
+    "author": "Flowork Cyber Division",
+    "tier": "free",
+    "type": "apps",
+    "entry_point": "logic.js",
+    "icon_file": "icon.svg",
+    "default_width": 10,
+    "default_height": 8,
+    "slug": "trend-signal",
+    "capabilities": [
+        "internet_access",
+        "youtube_api",
+        "data_analytics"
+    ],
+    "tags": [
+        "trend",
+        "market-research",
+        "youtube",
+        "analytics",
+        "viral"
+    ]
+}

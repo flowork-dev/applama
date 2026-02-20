@@ -1,0 +1,27 @@
+{
+    "id": "icon-tactical",
+    "name": "ICON TACTICAL - AUTO ASSET GENERATOR",
+    "ver": "2.0.0",
+    "description": "Instant icon asset generator for developers and creators. Generate 20+ standard sizes (Favicon, Android, iOS) from a single logo with automated padding and radius.",
+    "author": "Flowork Cyber Division",
+    "tier": "free",
+    "type": "apps",
+    "entry_point": "logic.js",
+    "icon_file": "icon.svg",
+    "default_width": 10,
+    "default_height": 9,
+    "slug": "icon-tactical",
+    "capabilities": [
+        "local_processing",
+        "canvas_manipulation",
+        "file_download",
+        "file_export"
+    ],
+    "tags": [
+        "developer tools",
+        "icon generator",
+        "assets",
+        "branding",
+        "utility"
+    ]
+}

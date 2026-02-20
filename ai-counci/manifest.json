@@ -1,0 +1,22 @@
+{
+    "id": "ai-counci",
+    "ver": "1.0.1",
+    "name": "AI Council: War Room",
+    "function_label": "AI Debater",
+    "description": "Suruh Ai Debat Buat Selesaikan Masalah Lo dan Bantu Ambil Keputusan",
+    "author": "Flowork Cyber Division",
+    "tier": "login",
+    "type": "apps",
+    "entry_point": "index.html",
+    "icon_file": "icon.svg",
+    "default_width": 12,
+    "default_height": 9,
+    "slug": "ai-counci",
+    "capabilities": ["internet_access", "cloud_sync"],
+    "tags": ["ai", "decision making", "strategy"],
+    "required_variables": [
+        { "name": "GEMINI_API_KEY", "label": "Gemini Key (Creative)", "type": "secret", "required": true },
+        { "name": "OPENAI_API_KEY", "label": "OpenAI Key (Logic)", "type": "secret", "required": true },
+        { "name": "DEEPSEEK_API_KEY", "label": "DeepSeek Key (Tactical)", "type": "secret", "required": true }
+    ]
+}
